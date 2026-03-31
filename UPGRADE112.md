@@ -66,10 +66,10 @@ The NFS door exposes user and group quota information via the remote quota proto
 
 ## Pool
 
-Pools now autonomously detect and replicate hot files when in-flight transfers exceed a configurable threshold. The pool triggers migration to create replicas on other pools in the same group. Enable with `pool.hotfile.monitoring.enable=true`. Tune parameters via `\s <pool> hotfile` admin commands. This is particularly valuable for workloads accessing shared calibration files or common datasets. [11.2]
+Pools now autonomously detect and replicate hot files when in-flight transfers exceed a configurable threshold. The pool triggers migration to create replicas on other pools in the same group. Enable with `pool.hotfile.replication.enable=true`. Tune parameters via `\s <pool> hotfile` admin commands. This is particularly valuable for workloads accessing shared calibration files or common datasets. [11.2]
 
 ```properties
-pool.hotfile.monitoring.enable=true
+pool.hotfile.replication.enable=true
 ```
 
 The `set max diskspace` command now accepts percentages of total disk space, making heterogeneous pool configurations easier. Pools also automatically shrink declared maximum space if the underlying filesystem shrinks. [11.0]
@@ -307,7 +307,7 @@ dcache database update
 ### 5. Review configuration
 
 Verify NFS exports and pool configuration are updated. Consider enabling:
-- Hot file replication: `pool.hotfile.monitoring.enable=true`
+- Hot file replication: `pool.hotfile.replication.enable=true`
 - Prometheus exporter: `dcache.enable.prometheus.exporter=true`
 - Kafka logging: `billing.enable.kafka=true`
 
