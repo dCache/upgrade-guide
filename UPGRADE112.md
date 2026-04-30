@@ -35,6 +35,7 @@ Database schema migrations cannot be rolled back. Liquibase 4 migrations applied
 - ARGUS plugin removed.
 - Access to HSM-only files denied.
 - Stage cancellation propagated to pool.
+- Frontend and WebDAV doors enforce HTTP request limits
 
 ## NFS
 
@@ -220,8 +221,6 @@ The XRootD door correctly handles HAProxy when `xrootd.enable.proxy-protocol=tru
 
 ## Frontend / REST API
 
-A request rate limiter protects against brute-force attacks. By default, rate limiting applies only to authentication errors, allowing legitimate traffic to flow freely. Configure limits per source IP if needed. [11.2]
-
 The frontend supports OAuth2 authorization code flow for `dcache-view`, enabling browser-based authentication with federated identity providers. [11.2]
 
 The REST API `id` resource is now admin-only. JSON validation was added to the migration request endpoint. [10.2, 11.2]
@@ -260,6 +259,51 @@ dcache database update
 ```
 
 Jetty version numbers are no longer sent in HTTP response headers for security. [10.2, 11.0]
+
+## Frontend / Webdav
+
+A request-rate-limiting mechanism has been introduced for the Jetty-based WebDAV and Frontend doors to improve resilience against misbehaving or abusive clients. Previously, the system assumed well-behaved clients, which could allow even a single client to overwhelm the service. The new implementation adds a Jetty handler layer that tracks request outcomes and enforces both global and per-client rate limits using configurable thresholds backed by in-memory caches and rate limiting controls. Clients exceeding these limits receive HTTP 429 responses and may be temporarily blocked. Administrators can reset blocked clients via new admin commands. Several configuration properties have been added to control request rates, error thresholds, blocking windows, and limits on blocked clients, providing flexible protection against denial-of-service scenarios.
+
+The request rate limiter is controlled through a set of configuration properties that define how aggressively clients are throttled or blocked, both globally and individually:
+
+**webdav.limits.max-blocked-clients**
+Sets the maximum number of clients that can be tracked as blocked at any given time. This prevents unbounded memory usage if many clients are misbehaving simultaneously.
+
+#### Global rate limiting
+
+**webdav.limits.rate.overall, default 1000**
+
+Defines the total request rate allowed across all clients combined. This acts as a system-wide throttle to protect the service under heavy load.
+
+### Per-client rate limiting
+
+**webdav.limits.rate.per-client.fractions, default 25%**
+
+Specifies how much of the global rate each individual client is allowed to consume (typically as a fraction of the overall rate).
+
+**webdav.limits.rate.per-client.block.window.time, default 10**
+**webdav.limits.rate.per-client.block.window.time.units, default SECONDS**
+
+Define how long a client remains blocked after exceeding its rate limit.
+
+### Error-based blocking
+
+**webdav.limits.error.max-allowed, default 3**
+The maximum number of failed or problematic requests a client may generate within a time window before being blocked.
+
+**webdav.limits.error.block.window.time, default 20**
+**webdav.limits.error.block.window.time.units, default SECONDS**
+
+Define the duration of the observation window for counting errors, and how long a client is blocked once the threshold is exceeded.
+
+### Blocked client management
+
+**webdav.limits.blocked-clients.idle-time, default 10**
+**webdav.limits.blocked-clients.idle-time.units, default SECONDS**
+
+Control how long a blocked client remains in the blocked list without activity before being automatically removed.
+
+The same set of properties applies to the frontend door, with the prefix `frontend`.
 
 ---
 
