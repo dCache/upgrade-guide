@@ -192,12 +192,14 @@ dcache.enable.prometheus.exporter.endpoint=localhost:9876
 
 ## SciTags / Firefly
 
-SciTag support was enhanced with experiment ID and activity tracking. Doors and pools propagate SciTag information from clients to flow markers for network monitoring. Configure with `pool.enable.firefly`, `pool.firefly.vo-mapping`, and `pool.firefly.excludes` properties. The `vo-mapping` property maps VO names to experiment IDs for automatic tagging. [10.2, 11.0]
+SciTag support was enhanced with experiment ID and activity tracking. Doors and pools propagate SciTag information from clients to flow markers for network monitoring. [10.2, 11.0]
 
 ```properties
-pool.enable.firefly=false
-pool.firefly.vo-mapping=atlas:2, cms:3, lsst:9
-pool.firefly.excludes=a.b.c.d/16
+pool.enable.firefly=true
+pool.firefly.destination=collector.scitags.org:10514
+pool.firefly.storage-statistics=true
+# (Optional) to exclude local networks
+pool.firefly.excludes=a.b.c.d/16, aa:bb:cc:dd:ee:ff/64, v.x.w.z
 ```
 
 ---
